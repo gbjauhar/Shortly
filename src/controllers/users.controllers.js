@@ -1,4 +1,5 @@
 import {connection} from "../database/server.js"
+import { v4 as uuid } from "uuid";
 
 export async function createUser(req, res) {
     const { name, email, password, confirmPassword } = req.body
@@ -16,4 +17,20 @@ export async function createUser(req, res) {
     res.sendStatus(500)
 }
 
+}
+
+export async function signInUser(req, res){
+    const {email, password} = req.body
+    try{
+        const checkUser = await connection.query('SELECT * FROM users WHERE email=$1 AND password=$2;', [email, password])
+        if(checkUser.rowCount === 0){
+            return res.sendStatus(401)
+        }
+        const token = uuid()
+        await connection.query('INSERT INTO sessions ("userId", token) VALUES ($1, $2);', [checkUser.rows[0].id, token])
+        res.status(200).send(token)
+    }catch(err){
+        res.sendStatus(500)
+        console.log(err)
+    }
 }
