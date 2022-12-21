@@ -16,3 +16,23 @@ export async function createUrl(req, res){
     }
 
 }
+
+export async function showUrl(req, res){
+    const {id} = req.params
+    try{
+        const findUrl = await connection.query('SELECT * FROM urls WHERE id=$1;', [id])
+        if(findUrl.rowCount === 0){
+            return res.sendStatus(404)
+        }
+        const body = ({
+            id: findUrl.rows[0].id,
+            url: findUrl.rows[0].url,
+            shortUrl: findUrl.rows[0].shortUrl
+        })
+        res.status(200).send(body)
+    }catch(err){
+        res.sendStatus(500)
+        console.log(err)
+
+    }
+}
