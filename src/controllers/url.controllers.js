@@ -8,7 +8,7 @@ export async function createUrl(req, res){
     try{
         const shortened = nanoid(10)
         const existingUser = await connection.query('SELECT "userId" FROM sessions WHERE token=$1;', [token])
-        await connection.query('INSERT INTO urls ("userId", url, "shortUrl") VALUES ($1, $2, $3);', [existingUser.rows[0].userId, url, shortened])
+        await connection.query('INSERT INTO urls ("userId", url, "shortUrl", "visitCount") VALUES ($1, $2, $3, $4);', [existingUser.rows[0].userId, url, shortened, 0])
         res.status(201).send({"shortUrl": shortened})
     }catch (err){
         res.sendStatus(500)
@@ -34,5 +34,19 @@ export async function showUrl(req, res){
         res.sendStatus(500)
         console.log(err)
 
+    }
+}
+
+export async function showSite(req, res){
+    const {shortUrl} = req.params
+    try{
+        const findUrl = await connection.query('SELECT url FROM urls WHERE "shortUrl"=$1;', [shortUrl])
+        if(findUrl.rowCount === 0){
+            return res.sendStatus(404)
+        }
+        res.redirect(200, findUrl.rows[0].url)
+    }catch(err){
+        res.sendStatus(500)
+        console.log(err)
     }
 }
