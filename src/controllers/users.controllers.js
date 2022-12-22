@@ -1,5 +1,6 @@
 import { connection } from "../database/server.js"
 import { v4 as uuid } from "uuid";
+import bcrypt from "bcrypt"
 
 export async function createUser(req, res) {
     const { name, email, password, confirmPassword } = req.body
@@ -11,7 +12,8 @@ export async function createUser(req, res) {
         if (existingUser.rowCount > 0) {
             return res.sendStatus(409)
         }
-        await connection.query('INSERT INTO users (name, email, password) VALUES ($1, $2, $3);', [name, email, password])
+        const passwordHash = bcrypt.hashSync(password, 10);
+        await connection.query('INSERT INTO users (name, email, password) VALUES ($1, $2, $3);', [name, email, passwordHash])
         res.sendStatus(201)
     } catch (err) {
         res.sendStatus(500)
@@ -22,13 +24,15 @@ export async function createUser(req, res) {
 export async function signInUser(req, res) {
     const { email, password } = req.body
     try {
-        const checkUser = await connection.query('SELECT * FROM users WHERE email=$1 AND password=$2;', [email, password])
-        if (checkUser.rowCount === 0) {
-            return res.sendStatus(401)
-        }
+        const checkUser = await connection.query('SELECT * FROM users WHERE email=$1;', [email])
+        if(checkUser && bcrypt.compareSync(password, checkUser.rows[0].password)){
         const token = uuid()
         await connection.query('UPDATE users SET token=$1 WHERE email=$2;', [token, email])
         res.status(200).send(token)
+        }else{
+            return res.sendStatus(401)
+
+        }
     } catch (err) {
         res.sendStatus(500)
         console.log(err)
