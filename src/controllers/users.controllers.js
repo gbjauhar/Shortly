@@ -27,7 +27,7 @@ export async function signInUser(req, res){
             return res.sendStatus(401)
         }
         const token = uuid()
-        await connection.query('INSERT INTO sessions ("userId", token) VALUES ($1, $2);', [checkUser.rows[0].id, token])
+        await connection.query('UPDATE users SET token=$1 WHERE email=$2;', [token, email])
         res.status(200).send(token)
     }catch(err){
         res.sendStatus(500)

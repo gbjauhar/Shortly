@@ -4,10 +4,10 @@ import { connection } from "../src/database/server.js";
 export async function urlValidation(req, res, next){
     const {authorization} = req.headers
     const token = authorization?.replace("Bearer ","")
-    if(!req.headers){
-        return res.status(401)
+    if(!authorization){
+        return res.sendStatus(401)
     }
-    const checkToken = await connection.query('SELECT * FROM sessions WHERE token=$1;', [token])
+    const checkToken = await connection.query('SELECT * FROM users WHERE token=$1;', [token])
     if(checkToken.rowCount === 0){
         return res.sendStatus(401)
     }
