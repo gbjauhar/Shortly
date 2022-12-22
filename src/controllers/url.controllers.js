@@ -53,3 +53,33 @@ export async function showSite(req, res){
         
     }
 }
+
+export async function deleteById(req, res){
+    const {id} = req.params
+    const {authorization} = req.headers
+    const token = authorization?.replace("Bearer ","")
+    try{
+    if(!authorization){
+        return res.sendStatus(401)
+    }
+    const checkToken = await connection.query('SELECT * FROM users WHERE token=$1;', [token])
+    if(checkToken.rowCount === 0){
+        return res.sendStatus(401)
+    }
+    const findUrl = await connection.query('SELECT * FROM urls WHERE id=$1;', [id])
+    if(findUrl.rowCount === 0){
+        return res.sendStatus(404)
+    }
+
+    const findUrlByUser = await connection.query('SELECT "shortUrl" FROM urls WHERE "userId"=$1;', [checkToken.rows[0].id])
+    if(findUrlByUser.rowCount === 0){
+        return res.sendStatus(401)
+    }
+    await connection.query('DELETE FROM urls WHERE id=$1;', [id])
+   res.sendStatus(204)
+
+}catch (err){
+    res.sendStatus(500)
+    console.log(err)
+}
+}
